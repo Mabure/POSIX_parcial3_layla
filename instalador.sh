@@ -58,19 +58,50 @@ echo "Base de datos creada correctamente en $DB_FILE"
 echo '#!/bin/bash
 # Script para insertar productos desde CSV
 
-DB_FILE=../db/tienda.db
-CSV_FILE=../raw_data/productos.csv
+#!/bin/bash
 
-if [ ! -f "$CSV_FILE" ]; then
-  echo "Archivo CSV no encontrado: $CSV_FILE"
+# Obtener ruta absoluta de la base de datos
+DB_FILE="../db/tienda.db"
+RAW_DIR="../raw_data"
+
+mkdir -p "$RAW_DIR"
+
+# Mostrar menú de tablas
+echo "¿A qué tabla deseas importar datos?"
+echo "1) productos"
+echo "2) clientes"
+echo "3) ventas"
+echo "4) detalle_ventas"
+read -p "Selecciona una opción (1-4): " opcion
+
+case $opcion in
+  1) tabla="productos"; ;;
+  2) tabla="clientes"; ;;
+  3) tabla="ventas"; ;;
+  4) tabla="detalle_ventas"; ;;
+  *) echo "Opción inválida."; exit 1; ;;
+esac
+
+# Pedir archivo CSV
+read -p "Nombre del archivo CSV en raw_data/ (por ejemplo: productos.csv): " archivo_csv
+CSV_FILE="$RAW_DIR/$archivo_csv"
+
+# Verificar que el archivo exista
+if [[ ! -f "$CSV_FILE" ]]; then
+  echo "El archivo '$CSV_FILE' no existe."
   exit 1
 fi
 
-tail -n +2 "$CSV_FILE" | while IFS=, read -r nombre categoria precio_unitario stock; do
-  sqlite3 $DB_FILE "INSERT INTO productos (nombre, categoria, precio_unitario, stock) VALUES (\"$nombre\", \"$categoria\", $precio_unitario, $stock);"
-done
+# Importar datos
+echo "Importando datos desde $CSV_FILE a la tabla '$tabla'..."
+sqlite3 "$DB_FILE" <<EOF
+.mode csv
+.separator ","
+.import $CSV_FILE $tabla
+EOF
 
-echo "Productos insertados desde $CSV_FILE"
+echo "Datos importados correctamente a '$tabla'."
+
 ' > scripts/importar_csv.sh
 
 # Crear consulta.sh
