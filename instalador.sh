@@ -93,14 +93,14 @@ if [[ ! -f "$CSV_FILE" ]]; then
 fi
 
 # Importar datos
-echo "Importando datos desde $CSV_FILE a la tabla '$tabla'..."
+echo "Importando datos desde $CSV_FILE a la tabla..."
 sqlite3 "$DB_FILE" <<EOF
 .mode csv
 .separator ","
 .import $CSV_FILE $tabla
 EOF
 
-echo "Datos importados correctamente a '$tabla'."
+echo "Datos importados correctamente."
 
 ' > scripts/importar_csv.sh
 
@@ -136,15 +136,23 @@ echo "Reporte 'top_clientes.json' generado."
 
 # Crear export_csv.sh (exporta productos a CSV)
 echo '#!/bin/bash
-# Exportar productos a un archivo CSV
+# Script para exportar todas las tablas de la base de datos a archivos CSV
 
-DB_FILE=../db/tienda.db
-OUTPUT_FILE=../exports/productos_exportados.csv
+DB_FILE="../db/tienda.db"
+EXPORT_DIR="../exports"
 
-echo "Exportando productos..."
-sqlite3 -header -csv $DB_FILE "SELECT * FROM productos;" > $OUTPUT_FILE
+# Lista de tablas a exportar
+tablas=("productos" "clientes" "ventas" "detalle_ventas")
 
-echo "Productos exportados a $OUTPUT_FILE"
+# Exportar cada tabla a un CSV
+for tabla in "${tablas[@]}"; do
+  salida="$EXPORT_DIR/${tabla}.csv"
+  echo "Exportando tabla '$tabla' a '$salida'..."
+  sqlite3 -header -csv "$DB_FILE" "SELECT * FROM $tabla;" > "$salida"
+done
+
+echo "Todas las tablas fueron exportadas correctamente a $EXPORT_DIR"
+
 ' > scripts/export_csv.sh
 
 # Permisos de ejecución
